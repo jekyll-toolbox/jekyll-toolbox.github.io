@@ -2,8 +2,8 @@
 name: 'Jekyll Toolbox'
 title: 'Jekyll Toolbox'
 description: 'Jekyll Toolbox - Tips, Tricks, Samples and more'
-baseurl: ''
-url: '//'
+baseurl: '/'
+url: 'https://jekyll-toolbox.github.io'
 url_noprotocol: {{ site.url | replace: 'http://', '//'}}
 
 include: ["_pages"]
