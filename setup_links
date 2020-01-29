@@ -1,0 +1,36 @@
+#!/usr/local/bin/bash
+
+CLOUD=/Users/Shared/CLOUD
+
+#			Bootstrap:bootstrap-toolbox				\
+#			CSS:css-toolbox							\
+#			HTML:html-toolbox
+
+for _P in	Enrichment:enrichment-toolbox			\
+			Ionic:ionic-toolbox
+do
+	_D=${_P%:*}
+	_U=${_P#*:}
+
+	_DIR=$CLOUD/Development.${_D}/Repositories.FromGithub/repositories/${_U}
+	#printf "_P=%-20s _D=%-20s _U=%-20s %s\n" "$_P" "$_D ""$_U" "$_DIR"
+
+	echo "# List of $_DIR"
+
+	ls -1d $_DIR/*					|\
+	grep -v .env					|\
+	grep -v .github.io				|\
+	while read _R
+	do
+		_SRC="$_R"
+		_DST="$(basename $_SRC)"
+
+		if [[ -L "$_DST" ]]; then
+			rm "$_DST"
+		fi
+
+		if [[ -d "$_SRC" ]]; then
+			echo ln -s "$_SRC" "$_DST"
+		fi
+	done
+done
