@@ -2,17 +2,16 @@
 
 #set -u
 
-_FLDR_CLOUD=/Users/Shared/CLOUD
-
 _LINK_GITHUB=https://github.com
 
 _USER="$(basename "$(dirname "$PWD")")"
 _HERE="$(cd ..; pwd)"
 
-_DIRGIT=$_FLDR_CLOUD/Development.GitHub/img.github.io
-_DIRIMG=../${_USER}.github.io/assets/img
+_FLDR_CLOUD=/Users/Shared/CLOUD
+_FLDR_GIT=$_FLDR_CLOUD/Development.Resources/img.github.io
+_FLDR_IMG=../${_USER}.github.io/assets/img
 
-LOGL=1
+LOGL=2
 LOGPOS=10
 LOG() {
 	local _LOGL; _LOGL="$1";	shift
@@ -27,6 +26,11 @@ LOG() {
 	fi
 }
 
+LOG_NEWLINE() {
+	if  [[ $LOGL -gt 2 ]]; then
+		printf "\n" >&2
+	fi
+}
 ADD() {
 	local _PAR1; _PAR1="${1}";
 	local _PAR2; _PAR2="${2:- }"
@@ -39,6 +43,9 @@ LOG 1 "Scanning repositories" "$_HERE"
 for _THISREP in $(ls -1dF ../* | grep -v -E 'github.io|bin' | grep -E '[\@/]$' | sort)
 do
 	LOGPOS=0
+
+	LOG_NEWLINE
+	LOG 2 "REPO" "$_THISREP"
 
 	_STEP=""
 	_REPO="$(basename "$_THISREP" | tr -d '@')"
@@ -54,51 +61,53 @@ do
 		_TEMP="${_TEMP%/*}"
 		_USER="${_TEMP##*/}"
 	fi
-	LOG 2 "TEMP" "$_TEMP"
+	LOG 3 "TEMP" "$_TEMP"
 
 	_TEMP="${_REPO%%_*}"							# Learning-TypeScript
 
-	LOG 2 "HERE" "$_HERE"
-	LOG 2 "REPO" "$_REPO"
-	LOG 2 "TEMP" "$_TEMP"
-	LOG 2 "USER" "$_USER"
+	LOG 3 "HERE" "$_HERE"
+	LOG 3 "REPO" "$_REPO"
+	LOG 3 "TEMP" "$_TEMP"
+	LOG 3 "USER" "$_USER"
 
 	_REALPATH="$(readlink "$_THISREP")"
 	_REALPATH="${_REALPATH#*repositories/}"
+	LOG 3 "PATH" "$_REALPATH"
 
 	if [[ "$_REALPATH" = "" ]]; then
+		_STEP="U1"
 		_THISUSR="$_USER"
-		_STEP="U1"
 	else
+		_STEP="U2"
 		_THISUSR="$(dirname "$_REALPATH")"
-		_STEP="U1"
 	fi
-	LOG 2 "THISUSR" "$_THISUSR"
+	LOG 3 "THISUSR" "$_THISUSR"
 
 	_LINK="$_LINK_GITHUB/$_THISUSR/$_REPO"
-	LOG 2 "LINK" "$_LINK"
+	LOG 3 "LINK" "$_LINK"
 
 	if [[ -f "$_THISREP/DESCRIPTION" ]]; then
+		_STEP="${_STEP}-T1"
 		_TEXT=$(cat "$_THISREP/DESCRIPTION" | sed '1,$s/$/\<br\>/g')
-		_STEP="${_STEP}-T1"
 	else
+		_STEP="${_STEP}-T2"
 		_TEXT=""
-		_STEP="${_STEP}-T1"
 	fi
-	LOG 2 "TEXT" "$_TEXT"
+	LOG 3 "TEXT" "$_TEXT"
 
 	_TITLE="missing"
 	_LANG="-"
 	_IMAGE="placeholder.png"
 
 	_CATEGORY="${_TEMP,,}"
-	LOG 2 "CATEGORY" "$_CATEGORY"
+	LOG 3 "CATEGORY" "$_CATEGORY"
 
+	LOG 3 "CHECK" "$_TEMP / $_REPO"
 	if [[ "$_TEMP" == "$_REPO" ]]; then
-		LOG 2 "SAME" "$_TEMP / $_REPO"
-		_SUBTITLE="$_TEMP"
-
 		_STEP="${_STEP}-S1"
+
+		LOG 3 "SAME" "$_TEMP / $_REPO"
+		_SUBTITLE="$_TEMP"
 	else
 		_STEP="${_STEP}-S2"
 
@@ -109,9 +118,9 @@ do
 		_LANG="${_TEMP#*-}"
 		_LANG="${_LANG,,}"
 
-		LOG 2 "SUBTITLE" "$_SUBTITLE"
-		LOG 2 "TYPE"     "$_TYPE"
-		LOG 2 "LANG"     "$_LANG"
+		LOG 3 "SUBTITLE" "$_SUBTITLE"
+		LOG 3 "TYPE"     "$_TYPE"
+		LOG 3 "LANG"     "$_LANG"
 
 		if [[ "${_LANG}" == "${_TYPE,,}" ]]; then
 			_LANG=""
@@ -120,58 +129,18 @@ do
 			_STEP="${_STEP}-L#"
 		fi
 
-		LOG 2 "LANG" "$_LANG"
+		LOG 3 "LANG" "$_LANG"
 
 		if [[ "$_TYPE" = "$_LANG" ]]; then
 			_TITLE="$_TYPE"
-			LOG 2 "TITLE" "$_TITLE"
+			LOG 3 "TITLE" "$_TITLE"
 
 			_STEP="${_STEP}-T1"
 		else
 			_TITLE="$_TYPE $_LANG"
-			LOG 2 "TITLE" "$_TITLE"
+			LOG 3 "TITLE" "$_TITLE"
 
 			_STEP="${_STEP}-T2"
-		fi
-
-		_IMAGE="${_SUBTITLE/ /-}.png"
-		_IMAGE="${_IMAGE,,}"
-
-		LOG 2 "check image" "$_DIRIMG/$_IMAGE"
-		if   [[ -f "$_DIRIMG/$_IMAGE" ]]; then
-			LOG 2 "use existing image" "$_DIRIMG/$_IMAGE"
-
-			_STEP="${_STEP}-I1"
-		elif [[ -f "$_DIRGIT/$_IMAGE" ]]; then
-			cp "$_DIRGIT/$_IMAGE" "$_DIRIMG"
-			LOG 2 "copy master image" "$_DIRGIT/$_IMAGE"
-
-			_STEP="${_STEP}-I2"
-		else
-			_IMAGE="${_CATEGORY/ /-}.png"
-			_IMAGE="${_IMAGE,,}"
-			LOG 2 "check new image" "$_DIRIMG/$_IMAGE"
-
-			if   [[ -f "$_DIRIMG/$_IMAGE" ]]; then
-				LOG 2 "use new existing image" "$_DIRIMG/$_IMAGE"
-
-				_STEP="${_STEP}-I3"
-			elif [[ -f "$_DIRGIT/$_IMAGE" ]]; then
-				LOG 1 "copy master image" "$_DIRGIT/$_IMAGE $_DIRIMG"
-				cp "$_DIRGIT/$_IMAGE" "$_DIRIMG"
-
-				_STEP="${_STEP}-I4"
-			else
-				_STEP="${_STEP}-I#"
-			fi
-		fi
-
-		if   [[ -f "$_DIRIMG/$_IMAGE" ]]; then
-			_STEP="${_STEP}-M#"
-		else
-			_IMAGE="placeholder.png"
-
-			_STEP="${_STEP}-M1"
 		fi
 
 		[[ "$_CATEGORY" =~ "missing"	]] && _CATEGORY=missing
@@ -181,7 +150,47 @@ do
 		[[ "$_CATEGORY" =~ "course"		]] && _CATEGORY=practice
 		[[ "$_CATEGORY" =~ "workshop"	]] && _CATEGORY=practice
 
-		LOG 2 "CATEGORY/IM" "$_CATEGORY / $_IMAGE"
+		LOG 3 "CATEGORY/IM" "$_CATEGORY / $_IMAGE"
+	fi
+
+    _IMAGE="${_SUBTITLE/ /-}.png"
+    _IMAGE="${_IMAGE,,}"
+
+	LOG 3 "check image" "$_FLDR_IMG/$_IMAGE"
+	if   [[ -f "$_FLDR_IMG/$_IMAGE" ]]; then
+		LOG 3 "use existing image" "$_FLDR_IMG/$_IMAGE"
+
+		_STEP="${_STEP}-I1"
+	elif [[ -f "$_FLDR_GIT/$_IMAGE" ]]; then
+		cp "$_FLDR_GIT/$_IMAGE" "$_FLDR_IMG"
+		LOG 3 "copy master image" "$_FLDR_GIT/$_IMAGE"
+
+		_STEP="${_STEP}-I2"
+	else
+		_IMAGE="${_CATEGORY/ /-}.png"
+		_IMAGE="${_IMAGE,,}"
+		LOG 3 "check new image" "$_FLDR_IMG/$_IMAGE"
+
+		if   [[ -f "$_FLDR_IMG/$_IMAGE" ]]; then
+			LOG 3 "use new existing image" "$_FLDR_IMG/$_IMAGE"
+
+			_STEP="${_STEP}-I3"
+		elif [[ -f "$_FLDR_GIT/$_IMAGE" ]]; then
+			LOG 1 "copy master image" "$_FLDR_GIT/$_IMAGE $_FLDR_IMG"
+			cp "$_FLDR_GIT/$_IMAGE" "$_FLDR_IMG"
+
+			_STEP="${_STEP}-I4"
+		else
+			_STEP="${_STEP}-I#"
+		fi
+	fi
+
+	if   [[ -f "$_FLDR_IMG/$_IMAGE" ]]; then
+		_STEP="${_STEP}-M#"
+	else
+		_IMAGE="placeholder.png"
+
+		_STEP="${_STEP}-M1"
 	fi
 
 	if [[ "$_TITLE" == "missing" ]]; then
@@ -205,6 +214,9 @@ do
 	_TITLE="${_TITLE/python/Python}"
 	_TITLE="${_TITLE/ math/ Math}"
 
+	LOG 3 "TITLE" "$_TITLE"
+	LOG 3 "STEP"  "$_STEP"
+
 	ADD "- title:"		"\"$_TITLE\""
 	ADD "  subtitle:"	"\"$_SUBTITLE\""
 	ADD "  text:"		"\"$_TEXT\""
@@ -217,4 +229,4 @@ do
 	echo ""
 	echo "#"
 
-done | grep -v '#_DBG' | cat > _data/repositories.yml
+done | grep -v -E '^#' | cat > _data/repositories.yml
