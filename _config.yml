@@ -2,7 +2,7 @@
 name: 'Jekyll Toolbox'
 title: 'Jekyll Toolbox'
 description: 'Jekyll Toolbox - Tips, Tricks, Samples and more'
-baseurl: '/'
+baseurl: '//'
 
 include: ["_pages"]
 #permalink: /:title/
